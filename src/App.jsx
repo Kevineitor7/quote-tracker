@@ -116,10 +116,6 @@ function App() {
     }
   ])
 
-  quotes.map((quote) => {
-    quote.total = getTotal(quote.type, quote.items)
-  })
-
   function addBedroom(e) {
     e.preventDefault()
     const amountOfBedrooms = rooms.filter((room) => room.type === "Bedroom").length
@@ -279,24 +275,33 @@ function App() {
 
   function checkCC(room) {
     let checked
-    form.items.map((item) => {
-      if (item.name === room) {
+    if (room === "Exterior") {
+      form.items.map((item) => {
         if (item.cc === true) {
           checked = true
         }
-      }
-    })
+      })
+    } else {
+      form.items.map((item) => {
+        if (item.name === room) {
+          if (item.cc === true) {
+            checked = true
+          }
+        }
+      })
+    }
     return checked
   }
 
-  function updateStatus(quote) {
-    let selectedQuote = quotes.filter((q) => q.id === quote.id)
-    if (selectedQuote[0].status === "Draft") { selectedQuote[0].status = "Sent" }
-    else if (selectedQuote[0].status === "Sent") { selectedQuote[0].status = "Rejected" }
-    else if (selectedQuote[0].status === "Rejected") { selectedQuote[0].status = "Accepted" }
-    else if (selectedQuote[0].status === "Accepted") { selectedQuote[0].status = "Draft" }
+  const nextStatus = {
+    Draft: "Sent",
+    Sent: "Rejected",
+    Rejected: "Accepted",
+    Accepted: "Draft",
+  }
 
-    dispatch({ type: 'status-update', payload: selectedQuote[0] })
+  function updateStatus(id, currentStatus) {
+    dispatch({ type: 'status-update', payload: { id, status: nextStatus[currentStatus] } })
   }
 
   return (
@@ -324,9 +329,9 @@ function App() {
                       ${quote.status === "Sent" && 'before:content-["📩"] border-blue-700 bg-blue-900'} 
                       ${quote.status === "Rejected" && 'before:content-["❌"] border-red-700 bg-red-900'}
                       ${quote.status === "Accepted" && 'before:content-["✅"] border-green-700 bg-green-900'}`}
-                      onClick={() => updateStatus(quote)}> {quote.status}
+                      onClick={() => updateStatus(quote.id, quote.status)}> {quote.status}
                     </span>
-                    <span>{quote.total}</span>
+                    <span>{getTotal(quote.type, quote.items)}</span>
                     <div className='flex flex-wrap gap-2'>
                       <button onClick={() => dispatch({ type: 'toggle-details', payload: quote.id })} className={`px-2 py-2 rounded-lg text-sm font-medium border bg-indigo-600 border-indigo-500 cursor-pointer`}>
                         {quote.details ? "Hide Details" : "See Details"}
@@ -386,13 +391,13 @@ function App() {
                     { rooms.map((room) => (
                       <div className='flex gap-2 mt-4'>
                         <span>{room.name}:</span>
-                        <input type="radio" id={`${room.name}-walls`} name={room.name} onChange={(e) => updateForm(e)} value={`${room.type} (Walls)`} checked={form.editing && checkRoomSelection(`${room.type} (Walls)`, room.name,) ? true : undefined}/>
+                        <input type="radio" id={`${room.name}-walls`} name={room.name} onChange={(e) => updateForm(e)} value={`${room.type} (Walls)`} checked={!!checkRoomSelection(`${room.type} (Walls)`, room.name)}/>
                         <label for={`${room.name}-walls`}>Walls</label>
-                        <input type="radio" id={`${room.name}-walls-trim`} name={room.name} onChange={(e) => updateForm(e)} value={`${room.type} (Walls + Trim)`} checked={form.editing && checkRoomSelection(`${room.type} (Walls + Trim)`, room.name) ? true : undefined}/>
+                        <input type="radio" id={`${room.name}-walls-trim`} name={room.name} onChange={(e) => updateForm(e)} value={`${room.type} (Walls + Trim)`} checked={!!checkRoomSelection(`${room.type} (Walls + Trim)`, room.name)}/>
                         <label for={`${room.name}-walls-trim`}>Walls + Trim</label>
-                        <input type="radio" id={`${room.name}-walls-trim-ceiling`} name={room.name} onChange={(e) => updateForm(e)} value={`${room.type} (Walls + Trim + Ceiling)`} checked={form.editing && checkRoomSelection(`${room.type} (Walls + Trim + Ceiling)`, room.name) ? true : undefined}/>
+                        <input type="radio" id={`${room.name}-walls-trim-ceiling`} name={room.name} onChange={(e) => updateForm(e)} value={`${room.type} (Walls + Trim + Ceiling)`} checked={!!checkRoomSelection(`${room.type} (Walls + Trim + Ceiling)`, room.name)}/>
                         <label for={`${room.name}-walls-trim-ceiling`}>Walls + Trim + Ceiling</label>
-                        <input type="checkbox" id={`${room.name}-color-change`} name={`${room.name}-cc`} onChange={(e) => updateForm(e)} value={`${room.type} Color Change`} checked={form.editing && checkCC(`${room.name}`) ? true : undefined}/>
+                        <input type="checkbox" id={`${room.name}-color-change`} name={`${room.name}-cc`} onChange={(e) => updateForm(e)} value={`${room.type} Color Change`} checked={!!checkCC(`${room.name}`)}/>
                         <label for={`${room.name}-color-change`}>Color Change</label> 
                       </div>
                     ))}
@@ -424,7 +429,7 @@ function App() {
                       </div>
                       <div className='flex gap-2'>
                         <label for="exterior-color-change">Color Change</label> 
-                        <input type="checkbox" id="exterior-color-change" name="exterior-color-change" onChange={(e) => updateForm(e)} value="Exterior Color Change" checked={form.editing && form.items[0].cc === true ? true : undefined}/>
+                        <input type="checkbox" id="exterior-color-change" name="exterior-color-change" onChange={(e) => updateForm(e)} value="Exterior Color Change" checked={!!checkCC("Exterior")}/>
                       </div>
                     </div>
                   </>
@@ -449,7 +454,6 @@ function App() {
                       type: formJobType,
                       items: [],
                       status: "Draft",
-                      total: getTotal(),
                       details: false,
                       editing: false
                     })
