@@ -1,4 +1,4 @@
-import { useState, useReducer } from 'react'
+import { useState, useReducer, useEffect } from 'react'
 
 function quotesReducer(quotes, action) {
   switch (action.type) {
@@ -85,7 +85,7 @@ function App() {
     {type: "Living Room", name:"Living Room"},
   ])
 
-  const [quotes, dispatch] = useReducer(quotesReducer, [
+  const originalQuotes = [
     { 
       id: crypto.randomUUID(),
       date: "2026-05-30", 
@@ -114,7 +114,18 @@ function App() {
       details: false,
       editing: false
     }
-  ])
+  ]
+
+  function loadQuotes(quotes) {
+    const stored = localStorage.getItem("quotes")
+    return stored ? JSON.parse(stored) : quotes
+  }
+
+  const [quotes, dispatch] = useReducer(quotesReducer, originalQuotes, loadQuotes)
+
+  useEffect(() => {
+    localStorage.setItem("quotes", JSON.stringify(quotes))
+  }, [quotes])
 
   function addBedroom(e) {
     e.preventDefault()
@@ -255,9 +266,8 @@ function App() {
   }
 
   function jobEdit(id) {
-    let editingQuote = quotes.filter(quote => quote.id === id)[0]
-    editingQuote.editing = true
-    setForm(editingQuote)
+    let editingQuote = quotes.find(quote => quote.id === id)
+    setForm({ ...editingQuote, editing: true })
     setformJobType(editingQuote.type)
     setQuoteForm(true)
   }
@@ -363,15 +373,15 @@ function App() {
               <h3 className='self-center mb-4'>Quote Form</h3>
               <div className='flex items-center gap-4'>
                 <label for="date">Date:</label>
-                <input type="date" id="date" name="date" value={form.editing ? form.date : undefined} onChange={(e) => updateForm(e)} required className='bg-gray-400 p-2 rounded-lg'/>
+                <input type="date" id="date" name="date" value={form.date} onChange={(e) => updateForm(e)} required className='bg-gray-400 p-2 rounded-lg'/>
               </div>
               <div className='flex items-center gap-4'>
                 <label for="name">Name:</label>
-                <input type="text" id="name" name="name" value={form.editing ? form.name : undefined} onChange={(e) => updateForm(e)} required className='bg-gray-400 p-2 rounded-lg'/>
+                <input type="text" id="name" name="name" value={form.name} onChange={(e) => updateForm(e)} required className='bg-gray-400 p-2 rounded-lg'/>
               </div>
               <div className='flex items-center gap-4'>
                 <label for="address">Address:</label>
-                <input type="text" id="address" name="address" value={form.editing ? form.address : undefined} onChange={(e) => updateForm(e)} required className='bg-gray-400 p-2 rounded-lg'/>
+                <input type="text" id="address" name="address" value={form.address} onChange={(e) => updateForm(e)} required className='bg-gray-400 p-2 rounded-lg'/>
               </div>
               <div className='flex items-center gap-4'>
                 <label for="job-type">Job type:</label>
@@ -416,15 +426,15 @@ function App() {
                     <div className='flex flex-col mt-4 gap-4'>
                       <div className='flex items-center gap-2'>
                         <label for="sqft">Sqft:</label>
-                        <input type="number" name="sqft" id="sqft" value={form.editing ? form.items[0].sqft : undefined} min="0" onChange={(e) => updateForm(e)} required className="bg-gray-400 p-2 rounded-lg"/>
+                        <input type="number" name="sqft" id="sqft" value={form.items[0]?.sqft} min="0" onChange={(e) => updateForm(e)} required className="bg-gray-400 p-2 rounded-lg"/>
                       </div>
                       <div className='flex gap-2'>
                         <span>Colors:</span>
-                        <input type="radio" id="1-color" name="colors" onChange={(e) => updateForm(e)} value="1" checked={form.editing && form.items[0].colors === "1" ? true : undefined} required/>
+                        <input type="radio" id="1-color" name="colors" onChange={(e) => updateForm(e)} value="1" checked={form.items[0]?.colors === "1"} required/>
                         <label for="1-color">1</label>
-                        <input type="radio" id="2-color" name="colors" onChange={(e) => updateForm(e)} value="2" checked={form.editing && form.items[0].colors === "2" ? true : undefined} required/>
+                        <input type="radio" id="2-color" name="colors" onChange={(e) => updateForm(e)} value="2" checked={form.items[0]?.colors === "2"} required/>
                         <label for="2-color">2</label>
-                        <input type="radio" id="3-color" name="colors" onChange={(e) => updateForm(e)} value="3" checked={form.editing && form.items[0].colors === "3" ? true : undefined} required/>
+                        <input type="radio" id="3-color" name="colors" onChange={(e) => updateForm(e)} value="3" checked={form.items[0]?.colors === "3"} required/>
                         <label for="3-color">3</label>
                       </div>
                       <div className='flex gap-2'>
