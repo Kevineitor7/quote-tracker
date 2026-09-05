@@ -64,6 +64,105 @@ function getTotal(type, items) {
   }
 }
 
+function useModal() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [data, setData] = useState(null)
+
+  function open(payload = null) {
+    setData(payload)
+    setIsOpen(true)
+  }
+
+  function close() {
+    setIsOpen(false)
+  }
+
+  return { isOpen, data, open, close }
+}
+
+function Modal({ isOpen, onClose, children }) {
+  const [shouldRender, setShouldRender] = useState(isOpen)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional two-step mount:
+      // shouldRender must flip before isVisible so the browser paints a "hidden" frame first
+      setShouldRender(true)
+      requestAnimationFrame(() => setIsVisible(true))
+    } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- starts the fade-out
+      // immediately; the actual unmount is deliberately delayed via the timeout below
+      setIsVisible(false)
+      const timeout = setTimeout(() => setShouldRender(false), 200)
+      return () => clearTimeout(timeout)
+    }
+  }, [isOpen])
+
+  if (!shouldRender) return null
+
+  return createPortal(
+    <div 
+      className={`fixed inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 
+      ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
+      onClick={onClose}>
+      <div 
+        className={`bg-white rounded-lg p-6 text-center transition-all duration-200
+        ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-15'}`} 
+        onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>,
+    document.getElementById('modal-root')
+  )
+}
+
+function useToast() {
+  const [toasts, setToasts] = useState([])
+
+  function add(type) {
+    const toastId = crypto.randomUUID()
+    setToasts(prev => [...prev, { 
+      id: toastId,
+      type: type,
+      message: type === 'quote-addition' ? "Quote added successfully" :
+        type === 'quote-removal' ? "Quote removed successfully" :
+        type === 'quote-edit' ? "Quote edited successfully" :
+        "Fill the form dude"
+    }])
+    
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== toastId))
+    }, 4000)
+  }
+
+  function remove(id) {
+    setToasts(prev => prev.filter(t => t.id !== id))
+  }
+
+  return { toasts, add, remove }
+}
+
+function Toast({ toasts, onClose }) {
+  return createPortal(
+    <div className='fixed bottom-4 left-4 z-50 flex flex-col gap-2'>
+      {toasts.map((t) => {
+        <div
+          key={t.id}
+          className={`rounded-md px-4 py-2 
+          ${t.type === 'quote-addition' && 'border-green-700 bg-green-900'}
+          ${t.type === 'quote-removal' && 'border-red-700 bg-red-900'}
+          ${t.type === 'quote-edit' && 'border-blue-700 bg-blue-900'}
+          ${t.type === 'form-validation' && 'border-yellow-700 bg-yellow-900'}`}
+        >
+          {t.message}
+        </div>
+      })}
+    </div>,
+    document.getElementById('toast-root')
+  )
+}
+
 function App() {
 
   const [quoteForm, setQuoteForm] = useState(false)
@@ -86,23 +185,9 @@ function App() {
     {type: "Living Room", name:"Living Room"},
   ])
 
-  function useModal() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [data, setData] = useState(null)
-
-  function open(payload = null) {
-    setData(payload)
-    setIsOpen(true)
-  }
-
-  function close() {
-    setIsOpen(false)
-  }
-
-  return { isOpen, data, open, close }
-}
-
   const modal = useModal()
+
+  const toast = useToast()
 
   const originalQuotes = [
     { 
@@ -158,6 +243,7 @@ function App() {
       dispatch({ type: 'edit-job', payload: form })
     } else {
       dispatch({ type: 'add-job', payload: form })
+      toast.add('quote-addition')
     }
     const emptyForm = {
       id: crypto.randomUUID(),
@@ -521,46 +607,31 @@ function App() {
             Delete
         </button>
       </Modal>
+      <Toast toasts={toast.toasts}>
+      </Toast>
+      <button 
+        className='bg-blue-900 p-2' 
+        onClick={() => {
+          toast.add('quote-addition')
+          console.log(toast.toasts)
+        }}>show toast
+      </button>
     </div>
   )
 }
 
-function Modal({ isOpen, onClose, children }) {
-  const [shouldRender, setShouldRender] = useState(isOpen)
-  const [isVisible, setIsVisible] = useState(false)
 
-  useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional two-step mount:
-      // shouldRender must flip before isVisible so the browser paints a "hidden" frame first
-      setShouldRender(true)
-      requestAnimationFrame(() => setIsVisible(true))
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- starts the fade-out
-      // immediately; the actual unmount is deliberately delayed via the timeout below
-      setIsVisible(false)
-      const timeout = setTimeout(() => setShouldRender(false), 200)
-      return () => clearTimeout(timeout)
-    }
-  }, [isOpen])
 
-  if (!shouldRender) return null
-
-  return createPortal(
-    <div 
-      className={`fixed inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 
-      ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
-      onClick={onClose}>
-      <div 
-        className={`bg-white rounded-lg p-6 text-center transition-all duration- 200
-        ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} 
-        onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>,
-    document.getElementById('modal-root')
-  )
-}
+//toast.show(quote)
+// the Toast portal should map() on a state of the toasts because there will be multiple and independent toasts
+// each toast will have its own timer
+// toast adding/removal and timer in the useToast definition
+// each toast will have a close button that will explicitly hide it
+// when adding the quote, editing the quote, removing quote, form error (filling all fields)
+// need to figure out where the state with the array of actions wiil be
+// the mapping will be done when rendering the toast component, it could be multiple same time
+// the state could be in the useToast hook function? (toast.actions)
+// toast.actions.map(action) => <Toast>Quote added succesfully</Toast>
 
 export default App
 
