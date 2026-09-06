@@ -137,27 +137,35 @@ function useToast() {
   }
 
   function remove(id) {
-    setToasts(prev => prev.filter(t => t.id !== id))
+      setToasts(prev => prev.filter(t => t.id !== id))
   }
 
   return { toasts, add, remove }
 }
 
-function Toast({ toasts, onClose }) {
+function Toast({ toasts, remove }) {
+  const toastStyling = {
+    'quote-addition': 'border-green-300 bg-green-900',
+    'quote-removal': 'border-orange-300 bg-orange-900',
+    'quote-edit': 'border-blue-300 bg-blue-700',
+    'form-validation': 'border-yellow-300 bg-yellow-900',
+  }
   return createPortal(
-    <div className='fixed bottom-4 left-4 z-50 flex flex-col gap-2'>
-      {toasts.map((t) => {
+    <div className='fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-md text-center z-50 flex flex-col gap-2'>
+      {toasts.map((t) => (
         <div
           key={t.id}
-          className={`rounded-md px-4 py-2 
-          ${t.type === 'quote-addition' && 'border-green-700 bg-green-900'}
-          ${t.type === 'quote-removal' && 'border-red-700 bg-red-900'}
-          ${t.type === 'quote-edit' && 'border-blue-700 bg-blue-900'}
-          ${t.type === 'form-validation' && 'border-yellow-700 bg-yellow-900'}`}
+          className={`rounded-lg px-12 py-4 text-white ${toastStyling[t.type]}`}
         >
           {t.message}
+          <button 
+            className='fixed relative left-28 bottom-2 cursor-pointer' 
+            onClick={() => remove(t.id)}
+          >
+            &#x2715;
+          </button>
         </div>
-      })}
+      ))}
     </div>,
     document.getElementById('toast-root')
   )
@@ -239,8 +247,13 @@ function App() {
 
   function handleSubmit(e) {
     e.preventDefault()
+    if (!e.target.checkValidity()) {
+      toast.add('form-validation')
+      return
+    }
     if (form.editing === true) {
       dispatch({ type: 'edit-job', payload: form })
+      toast.add('quote-edit')
     } else {
       dispatch({ type: 'add-job', payload: form })
       toast.add('quote-addition')
@@ -477,7 +490,7 @@ function App() {
         </div>
         { quoteForm ? (
           <>
-            <form onSubmit={handleSubmit} className='flex flex-col gap-6 bg-gray-200 text-gray-900 p-6 mt-12 w-2/5 rounded-md'>
+            <form noValidate onSubmit={handleSubmit} className='flex flex-col gap-6 bg-gray-200 text-gray-900 p-6 mt-12 w-2/5 rounded-md'>
               <h3 className='self-center mb-4'>Quote Form</h3>
               <div className='flex items-center gap-4'>
                 <label for="date">Date:</label>
@@ -602,15 +615,15 @@ function App() {
           onClick={() => {
             dispatch({ type: 'remove-job', payload: modal.data.id })
             modal.close()
+            toast.add('quote-removal')
         }}
           className='rounded-xl border-1 m-2 px-2 py-1 cursor-pointer bg-red-800 text-white'>
             Delete
         </button>
       </Modal>
-      <Toast toasts={toast.toasts}>
-      </Toast>
+      <Toast toasts={toast.toasts} remove={toast.remove}></Toast>
       <button 
-        className='bg-blue-900 p-2' 
+        className='bg-blue-900 p-4 absolute top-2' 
         onClick={() => {
           toast.add('quote-addition')
           console.log(toast.toasts)
@@ -620,18 +633,6 @@ function App() {
   )
 }
 
-
-
-//toast.show(quote)
-// the Toast portal should map() on a state of the toasts because there will be multiple and independent toasts
-// each toast will have its own timer
-// toast adding/removal and timer in the useToast definition
-// each toast will have a close button that will explicitly hide it
-// when adding the quote, editing the quote, removing quote, form error (filling all fields)
-// need to figure out where the state with the array of actions wiil be
-// the mapping will be done when rendering the toast component, it could be multiple same time
-// the state could be in the useToast hook function? (toast.actions)
-// toast.actions.map(action) => <Toast>Quote added succesfully</Toast>
 
 export default App
 
