@@ -159,7 +159,7 @@ function Toast({ toasts, remove }) {
         >
           {t.message}
           <button 
-            className='fixed relative left-28 bottom-2 cursor-pointer' 
+            className='relative left-28 bottom-2 cursor-pointer' 
             onClick={() => remove(t.id)}
           >
             &#x2715;
@@ -622,13 +622,6 @@ function App() {
         </button>
       </Modal>
       <Toast toasts={toast.toasts} remove={toast.remove}></Toast>
-      <button 
-        className='bg-blue-900 p-4 absolute top-2' 
-        onClick={() => {
-          toast.add('quote-addition')
-          console.log(toast.toasts)
-        }}>show toast
-      </button>
     </div>
   )
 }
