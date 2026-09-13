@@ -6,8 +6,9 @@ import { useState } from "react"
 export default function Login() {
     const login = useAuthStore((state) => state.login)
     const setName = useNameStore((state) => state.setName)
+    const name = useNameStore((state) => state.name)
     const navigate = useNavigate()
-    const [inputValue, setInputValue] = useState("")
+    const [inputValue, setInputValue] = useState(name)
 
     function handleSubmit(e) {
         e.preventDefault()
@@ -24,7 +25,7 @@ export default function Login() {
             <form onSubmit={handleSubmit} className="flex gap-4">
                 <label>
                     Name:
-                    <input type="text" onChange={(e) => setInputValue(e.target.value)} className="p-2 bg-gray-300 border-2 mx-4 text-black"/>
+                    <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} className="p-2 bg-gray-300 border-2 mx-4 text-black"/>
                 </label>
                 <button type="submit" className="px-4 py-2 rounded-lg text-sm font-medium border bg-indigo-600 border-indigo-500 cursor-pointer">Log</button>
             </form>
