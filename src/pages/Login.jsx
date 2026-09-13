@@ -12,9 +12,7 @@ export default function Login() {
     function handleSubmit(e) {
         e.preventDefault()
         login()
-        if (inputValue.trim() === "") {
-            setName("Mr.Person")
-        } else {
+        if (inputValue.trim() !== "") {
             setName(inputValue)
         }
         navigate("/")
