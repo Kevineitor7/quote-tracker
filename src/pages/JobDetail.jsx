@@ -1,5 +1,9 @@
+import { useParams } from "react-router"
+
 export default function JobDetail() {
+    const { jobId } = useParams()
+
     return (
-        <div>job detail</div>
+        <div>{jobId} detail</div>
     )
 }

@@ -1,5 +1,9 @@
+import { useParams } from "react-router"
+
 export default function ClientDetail() {
+    const { clientId } = useParams()
+
     return (
-        <div>client detail</div>
+        <div>{clientId} detail</div>
     )
 }
