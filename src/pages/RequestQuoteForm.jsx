@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useToast } from '../custom-hooks/useToast.jsx'
 import { Toast } from '../portals/Toast.jsx'
+import { useState, useEffect } from 'react'
 
 const requestSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -18,11 +19,22 @@ export default function RequestQuoteForm() {
         formState: { errors, isSubmitting },
     } = useForm({ resolver: zodResolver(requestSchema) })
 
+    const [quotes, setQuotes] = useState([])
+
+    useEffect(() => {
+        console.log(quotes)
+    }, [quotes])
+
     const toast = useToast()
 
     function onSubmit(data) {
-        console.log(data)
         toast.add('request-quote-form')
+        console.log('data', data)
+        let quoteAlreadyExists = Boolean(quotes.find((quote) => JSON.stringify(quote) === JSON.stringify(data))) //check if quote content is already in quote state array
+        if (!quoteAlreadyExists) {
+            setQuotes((prev) => [...prev, data])
+        }
+        console.log(quotes)
     }
 
     return (
@@ -41,7 +53,7 @@ export default function RequestQuoteForm() {
                 <label>
                     Service Type
                     <select {...register("serviceType")} className={`p-2 bg-gray-300 border-1 mx-4 text-black focus:outline-2 focus:bg-gray-400 ${errors.serviceType ? 'border-red-500' : 'border-gray-600'}`}>
-                        <option selected value="default">Select service type</option>
+                        <option defaultValue="default">Select service type</option>
                         <option value="interior">Interior</option>
                         <option value="exterior">Exterior</option>
                     </select>
