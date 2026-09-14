@@ -9,11 +9,13 @@ import JobDetail from './pages/JobDetail.jsx'
 import Clients from './pages/Clients.jsx'
 import ClientDetail from './pages/ClientDetail.jsx'
 import Settings from './pages/Settings.jsx'
+import RequestQuoteForm from './pages/RequestQuoteForm.jsx'
 
 export default function App() {
   return (
     <Routes>
       <Route path='/login' element={ <Login/> }/>
+      <Route path='/request-quote-form' element={ <RequestQuoteForm/> }/>
       <Route element={ <ProtectedRoute/> }>
         <Route element={ <DashboardLayout/> }>
           <Route index element={ <Overview/> }/>

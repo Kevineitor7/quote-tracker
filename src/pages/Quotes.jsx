@@ -1,5 +1,8 @@
 import { useState, useReducer, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useToast } from '../custom-hooks/useToast.jsx'
+import { Toast } from '../portals/Toast.jsx'
+import { useModal } from '../custom-hooks/useModal.jsx'
+import { Modal } from '../portals/Modal.jsx'
 
 function quotesReducer(quotes, action) {
   switch (action.type) {
@@ -64,114 +67,7 @@ function getTotal(type, items) {
   }
 }
 
-function useModal() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [data, setData] = useState(null)
-
-  function open(payload = null) {
-    setData(payload)
-    setIsOpen(true)
-  }
-
-  function close() {
-    setIsOpen(false)
-  }
-
-  return { isOpen, data, open, close }
-}
-
-function Modal({ isOpen, onClose, children }) {
-  const [shouldRender, setShouldRender] = useState(isOpen)
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional two-step mount:
-      // shouldRender must flip before isVisible so the browser paints a "hidden" frame first
-      setShouldRender(true)
-      requestAnimationFrame(() => setIsVisible(true))
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- starts the fade-out
-      // immediately; the actual unmount is deliberately delayed via the timeout below
-      setIsVisible(false)
-      const timeout = setTimeout(() => setShouldRender(false), 200)
-      return () => clearTimeout(timeout)
-    }
-  }, [isOpen])
-
-  if (!shouldRender) return null
-
-  return createPortal(
-    <div 
-      className={`fixed inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 
-      ${isVisible ? 'opacity-100' : 'opacity-0'}`} 
-      onClick={onClose}>
-      <div 
-        className={`bg-white rounded-lg p-6 text-center transition-all duration-200
-        ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-15'}`} 
-        onClick={(e) => e.stopPropagation()}>
-        {children}
-      </div>
-    </div>,
-    document.getElementById('modal-root')
-  )
-}
-
-function useToast() {
-  const [toasts, setToasts] = useState([])
-
-  function add(type) {
-    const toastId = crypto.randomUUID()
-    setToasts(prev => [...prev, { 
-      id: toastId,
-      type: type,
-      message: type === 'quote-addition' ? "Quote added successfully" :
-        type === 'quote-removal' ? "Quote removed successfully" :
-        type === 'quote-edit' ? "Quote edited successfully" :
-        "Fill the form dude"
-    }])
-    
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== toastId))
-    }, 4000)
-  }
-
-  function remove(id) {
-      setToasts(prev => prev.filter(t => t.id !== id))
-  }
-
-  return { toasts, add, remove }
-}
-
-function Toast({ toasts, remove }) {
-  const toastStyling = {
-    'quote-addition': 'border-green-300 bg-green-900',
-    'quote-removal': 'border-orange-300 bg-orange-900',
-    'quote-edit': 'border-blue-300 bg-blue-700',
-    'form-validation': 'border-yellow-300 bg-yellow-900',
-  }
-  return createPortal(
-    <div className='fixed top-4 left-1/2 -translate-x-1/2 w-full max-w-md text-center z-50 flex flex-col gap-2'>
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`rounded-lg px-12 py-4 text-white ${toastStyling[t.type]}`}
-        >
-          {t.message}
-          <button 
-            className='relative left-28 bottom-2 cursor-pointer' 
-            onClick={() => remove(t.id)}
-          >
-            &#x2715;
-          </button>
-        </div>
-      ))}
-    </div>,
-    document.getElementById('toast-root')
-  )
-}
-
-function Quotes() {
+export default function Quotes() {
 
   const [quoteForm, setQuoteForm] = useState(false)
   const [formJobType, setformJobType] = useState("Interior")
@@ -626,5 +522,3 @@ function Quotes() {
   )
 }
 
-
-export default Quotes
