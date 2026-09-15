@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { useToast } from '../custom-hooks/useToast.jsx'
 import { Toast } from '../portals/Toast.jsx'
 import { useState, useEffect } from 'react'
+import { useRequestQuoteStore } from '../store/useRequestQuoteStore.js'
 
 const requestSchema = z.object({
     name: z.string().min(1, "Name is required"),
@@ -19,22 +20,24 @@ export default function RequestQuoteForm() {
         formState: { errors, isSubmitting },
     } = useForm({ resolver: zodResolver(requestSchema) })
 
+    const addRequest = useRequestQuoteStore((state) => state.addRequest)
+    const requests = useRequestQuoteStore((state) => state.requests)
+
     const [quotes, setQuotes] = useState([])
 
     useEffect(() => {
-        console.log(quotes)
+        addRequest(quotes)
+        console.log(requests)
     }, [quotes])
 
     const toast = useToast()
 
     function onSubmit(data) {
-        toast.add('request-quote-form')
-        console.log('data', data)
-        let quoteAlreadyExists = Boolean(quotes.find((quote) => JSON.stringify(quote) === JSON.stringify(data))) //check if quote content is already in quote state array
+        let quoteAlreadyExists = Boolean(requests.find((r) => JSON.stringify(r) === JSON.stringify(data))) //check if quote content is already in quote state array
         if (!quoteAlreadyExists) {
+            toast.add('request-quote-form')
             setQuotes((prev) => [...prev, data])
         }
-        console.log(quotes)
     }
 
     return (
@@ -53,7 +56,7 @@ export default function RequestQuoteForm() {
                 <label>
                     Service Type
                     <select {...register("serviceType")} className={`p-2 bg-gray-300 border-1 mx-4 text-black focus:outline-2 focus:bg-gray-400 ${errors.serviceType ? 'border-red-500' : 'border-gray-600'}`}>
-                        <option defaultValue="default">Select service type</option>
+                        <option value="">Select service type</option>
                         <option value="interior">Interior</option>
                         <option value="exterior">Exterior</option>
                     </select>
