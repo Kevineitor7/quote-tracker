@@ -21,23 +21,12 @@ export default function RequestQuoteForm() {
     } = useForm({ resolver: zodResolver(requestSchema) })
 
     const addRequest = useRequestQuoteStore((state) => state.addRequest)
-    const requests = useRequestQuoteStore((state) => state.requests)
-
-    const [quotes, setQuotes] = useState([])
-
-    useEffect(() => {
-        addRequest(quotes)
-        console.log(requests)
-    }, [quotes])
 
     const toast = useToast()
 
     function onSubmit(data) {
-        let quoteAlreadyExists = Boolean(requests.find((r) => JSON.stringify(r) === JSON.stringify(data))) //check if quote content is already in quote state array
-        if (!quoteAlreadyExists) {
-            toast.add('request-quote-form')
-            setQuotes((prev) => [...prev, data])
-        }
+        toast.add('request-quote-form')
+        addRequest(data)
     }
 
     return (
